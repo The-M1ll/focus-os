@@ -31,7 +31,7 @@ motivational slogans, streaks, scores.
 | Space | 4-px base: 4 · 8 · 12 · 16 · 24 · 32 · 48 · 72 |
 | Radii | **three only**: 6 (inputs inner/kbd), 10 (fields, dialogs), pill (buttons, pills, switches) |
 | Dark | bg `#0e0e0f`, raised `#151516`, line `#262628`, text `#f2ede0`, text-2 `#bdb7a8`, text-3 `#8e8979`, accent `#cfef5b` (on `#12140a`) |
-| Light | bg `#f6f2e7`, line `#ddd6c3`, text `#17160f`, text-3 `#6b6757`, accent `#5b7a00` (on `#fbf8ef`) |
+| Light | bg `#f6f2e7`, line `#ddd6c3`, text `#17160f`, text-3 `#666253`, accent `#526e00` (on `#fbf8ef`) |
 | Motion | ease-out `cubic-bezier(.22,1,.36,1)`; 120 / 220 / 420 ms |
 
 Contrast is enforced, not assumed: axe-core runs on every screen in both themes in CI-style Playwright tests, and its

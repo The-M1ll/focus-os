@@ -35,10 +35,14 @@ async function seed(page: Page, theme: 'dark' | 'light' = 'dark') {
 
 async function axe(page: Page) {
   await page.addScriptTag({ content: AXE_SOURCE });
+  // Mid-fade text is semi-transparent and fails contrast on slow machines; audit the settled page.
+  await page.evaluate(async () => {
+    for (let i = 0; i < 50 && document.getAnimations().some((a) => a.playState === 'running'); i++) await new Promise((r) => setTimeout(r, 100));
+  });
   return page.evaluate(async () => {
     // @ts-expect-error injected global
     const r = await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa', 'best-practice'] }, rules: { region: { enabled: false } } });
-    return r.violations.map((v: { id: string; impact: string; nodes: { html: string; target: string[] }[] }) => ({ id: v.id, impact: v.impact, nodes: v.nodes.slice(0, 3).map((n) => n.target.join(' ')) }));
+    return r.violations.map((v: { id: string; impact: string; nodes: { html: string; target: string[]; any?: { message: string }[] }[] }) => ({ id: v.id, impact: v.impact, nodes: v.nodes.slice(0, 3).map((n) => n.target.join(' ') + ' :: ' + (n.any?.[0]?.message ?? '')) }));
   });
 }
 
