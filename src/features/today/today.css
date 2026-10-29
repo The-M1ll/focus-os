@@ -1,0 +1,36 @@
+.today-head { margin-bottom: var(--s-5); }
+.today-head .display { font-size: clamp(2.25rem, 5vw, 3.5rem); }
+.today-head .facts { margin-top: var(--s-3); display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); color: var(--text-2); font-size: var(--fs-small); }
+.today-head .facts b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.dial { position: relative; aspect-ratio: 1; margin: 0 auto; width: clamp(260px, calc(100vh - 470px), 440px); }
+.dial::before { content: ''; position: absolute; inset: -12%; background: var(--dial-glow); pointer-events: none; opacity: 0; transition: opacity var(--dur-slow); }
+.dial[data-state='running']::before, .dial[data-state='break']::before { opacity: 1; }
+.dial svg { position: relative; width: 100%; height: 100%; display: block; }
+.dial-track { stroke: var(--line); stroke-width: 1.5; }
+.dial-arc { stroke: var(--accent); stroke-width: 3; transition: stroke-dashoffset 1s linear, stroke var(--dur); }
+.dial[data-state='paused'] .dial-arc { stroke: var(--text-3); }
+.dial[data-state='idle'] .dial-arc { stroke: var(--line-strong); }
+.dial-tick { stroke: var(--line-strong); stroke-width: 1; transition: stroke var(--dur); }
+.dial-tick.major { stroke: var(--text-3); stroke-width: 1.5; }
+.dial-tick.lit { stroke: var(--accent); }
+.dial[data-state='paused'] .dial-tick.lit { stroke: var(--text-3); }
+.dial-knob { fill: var(--accent); }
+.dial[data-state='finished'] .dial-arc { animation: arc-done 900ms var(--ease-out) 1; }
+@keyframes arc-done { 0% { stroke-width: 3; } 40% { stroke-width: 8; } 100% { stroke-width: 3; } }
+.dial-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: var(--s-2); padding: 22%; }
+.dial-time { font-family: var(--font-display); font-size: var(--fs-dial); font-weight: 300; font-variation-settings: 'opsz' 144, 'SOFT' 0; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.dial[data-state='paused'] .dial-time { color: var(--text-2); }
+.dial-caption { color: var(--text-2); font-size: var(--fs-small); max-width: 22ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.timer-controls { display: flex; flex-direction: column; align-items: center; gap: var(--s-4); margin-top: var(--s-5); }
+.timer-controls .cluster { justify-content: center; }
+.timer-setup { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); width: min(460px, 100%); }
+.timer-setup .full { grid-column: 1 / -1; }
+
+.suggest { display: flex; flex-direction: column; gap: 2px; }
+.suggest .why { color: var(--text-3); font-size: var(--fs-small); }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-micro); font-family: var(--font-mono); letter-spacing: 0.04em; color: var(--text-2); }
+.chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+@media (max-width: 980px) { .dial { width: min(380px, 100%); } }

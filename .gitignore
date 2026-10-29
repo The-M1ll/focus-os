@@ -1,0 +1,11 @@
+node_modules
+dist
+target
+*.log
+src-tauri/gen
+test-results
+playwright-report
+.DS_Store
+extension/dist
+*.fosrecovery
+*.tsbuildinfo

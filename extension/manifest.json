@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "FOCUS OS",
+  "version": "0.1.0",
+  "description": "Measures time on limited websites and enforces your FOCUS OS limits. Talks only to the FOCUS OS desktop app on this computer.",
+  "minimum_chrome_version": "110",
+  "permissions": ["storage", "tabs", "idle", "alarms", "declarativeNetRequest"],
+  "host_permissions": [
+    "http://127.0.0.1:47777/*",
+    "*://*.instagram.com/*", "*://*.tiktok.com/*", "*://*.youtube.com/*", "*://youtu.be/*",
+    "*://web.telegram.org/*", "*://t.me/*", "*://*.discord.com/*", "*://*.reddit.com/*"
+  ],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "options_page": "options.html",
+  "action": { "default_title": "FOCUS OS", "default_popup": "options.html" },
+  "web_accessible_resources": [{ "resources": ["blocked.html"], "matches": ["<all_urls>"] }]
+}
