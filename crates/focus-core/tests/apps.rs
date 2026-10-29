@@ -1,6 +1,6 @@
 //! Real processes: the monitor finds a running program, warns, then really ends it.
 
-use focus_core::apps::{AppMonitor, AppRule, AppsPolicy, Mode, Notice, SysProcesses};
+use focus_core::apps::{AppMonitor, AppRule, AppsPolicy, Mode, Notice, ProcessSource, SysProcesses};
 use focus_core::personal::PersonalStore;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -22,8 +22,16 @@ fn spawn_victim() -> (Child, String, std::path::PathBuf) {
         .stderr(Stdio::null())
         .spawn()
         .expect("start the victim");
-    std::thread::sleep(Duration::from_millis(300)); // let the new process finish starting
     let slug = focus_core::apps::slug(&name);
+    // Wait (up to 20 s; Windows starts programs slowly) until the operating system actually lists the victim.
+    let started = Instant::now();
+    let mut src = SysProcesses::new();
+    while started.elapsed() < Duration::from_secs(20) {
+        if src.list().iter().any(|p| p.name.to_lowercase().starts_with("focus-victim") || p.exe.as_deref().is_some_and(|e| e.contains(&name))) {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
     (child, slug, dir)
 }
 
