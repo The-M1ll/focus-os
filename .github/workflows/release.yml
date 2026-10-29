@@ -4,7 +4,13 @@ name: release
 on:
   push:
     tags: ['v*']
+    branches: [main]
+    paths: ['.github/workflows/release.yml']   # editing this file publishes a release (v0.1.0 unless a tag is pushed)
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag to create, e.g. v0.1.1'
+        default: 'v0.1.0'
 
 permissions:
   contents: write
@@ -29,8 +35,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'FOCUS OS ${{ github.ref_name }}'
+          tagName: ${{ inputs.version || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v0.1.0' }}
+          releaseName: 'FOCUS OS ${{ inputs.version || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v0.1.0' }}'
           releaseBody: |
             Unsigned preview build. Windows SmartScreen / macOS Gatekeeper will warn on first launch.
             macOS: right-click the app, choose Open (or run `xattr -cr "/Applications/FOCUS OS.app"`).
@@ -51,4 +57,4 @@ jobs:
       - run: cd extension/dist && zip -r ../../focus-os-chrome-extension.zip .
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ github.ref_name }}" focus-os-chrome-extension.zip --clobber
+        run: gh release upload "${{ inputs.version || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v0.1.0' }}" focus-os-chrome-extension.zip --clobber
