@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "tauri": "tauri",
-    "build:extension": "vite build --config extension/vite.config.ts && cp extension/manifest.json extension/dist/manifest.json",
+    "build:extension": "vite build --config extension/vite.config.ts && cp extension/manifest.json extension/dist/manifest.json && cp -r extension/icons extension/dist/icons",
     "test:ext-e2e": "npm run build:extension && cargo build -p focus-core --example bridge_dev && xvfb-run -a node tests-e2e/extension.e2e.mjs"
   },
   "dependencies": {

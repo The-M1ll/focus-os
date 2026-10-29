@@ -4,15 +4,57 @@
   "version": "0.1.0",
   "description": "Measures time on limited websites and enforces your FOCUS OS limits. Talks only to the FOCUS OS desktop app on this computer.",
   "minimum_chrome_version": "110",
-  "permissions": ["storage", "tabs", "idle", "alarms", "declarativeNetRequest"],
+  "permissions": [
+    "storage",
+    "tabs",
+    "idle",
+    "alarms",
+    "declarativeNetRequest"
+  ],
   "host_permissions": [
     "http://127.0.0.1:47777/*",
-    "*://*.instagram.com/*", "*://*.tiktok.com/*", "*://*.youtube.com/*", "*://youtu.be/*",
-    "*://web.telegram.org/*", "*://t.me/*", "*://*.discord.com/*", "*://*.reddit.com/*"
+    "*://*.instagram.com/*",
+    "*://*.tiktok.com/*",
+    "*://*.youtube.com/*",
+    "*://youtu.be/*",
+    "*://web.telegram.org/*",
+    "*://t.me/*",
+    "*://*.discord.com/*",
+    "*://*.reddit.com/*"
   ],
-  "optional_host_permissions": ["http://*/*", "https://*/*"],
-  "background": { "service_worker": "background.js", "type": "module" },
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "options_page": "options.html",
-  "action": { "default_title": "FOCUS OS", "default_popup": "options.html" },
-  "web_accessible_resources": [{ "resources": ["blocked.html"], "matches": ["<all_urls>"] }]
+  "action": {
+    "default_title": "FOCUS OS",
+    "default_popup": "options.html",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png",
+      "48": "icons/48.png",
+      "128": "icons/128.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "blocked.html"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  }
 }
