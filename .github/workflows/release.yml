@@ -1,3 +1,4 @@
+# (re-run after enabling read+write workflow permissions)
 # Publishes installers to the repository's Releases page when a version tag (v*) is pushed.
 # Installers are UNSIGNED (no Apple/Microsoft certificates): macOS and Windows will warn on first launch.
 name: release
