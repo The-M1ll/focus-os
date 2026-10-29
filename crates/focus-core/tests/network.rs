@@ -435,13 +435,17 @@ async fn malformed_and_oversized_input_is_rejected_without_state_change() {
         .unwrap();
     assert_eq!(r.status(), 400);
     // Oversized body (limit 16 KiB).
-    let r = c
+    // The server may answer 413 or drop the connection while the body is still being written
+    // (macOS reports that as a reset); either way the request is rejected.
+    match c
         .post(format!("http://{}/v1/join", a.addr))
         .body(vec![b'a'; 200_000])
         .send()
         .await
-        .unwrap();
-    assert_eq!(r.status(), 413);
+    {
+        Ok(r) => assert_eq!(r.status(), 413),
+        Err(e) => assert!(e.is_request() || e.is_connect(), "unexpected error: {e}"),
+    }
     // Ack for a revision that does not exist.
     let r = signed_post(
         &a.addr,
