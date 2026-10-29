@@ -1,5 +1,6 @@
 use crate::error::{CmdError, CmdResult};
 use focus_core::CLASSROOM_MIGRATIONS;
+use focus_core::apps::{AppMonitor, SysProcesses};
 use focus_core::bridge::{BRIDGE_PORT, Bridge};
 use focus_core::crypto;
 use focus_core::db::Db;
@@ -34,6 +35,7 @@ pub struct AppState {
     pub bridge: Mutex<Option<Bridge>>,
     pub bridge_token: String,
     pub bridge_error: Mutex<Option<String>>,
+    pub apps: Arc<AppMonitor>,
 }
 
 #[cfg(unix)]
@@ -63,6 +65,7 @@ impl AppState {
                 t
             }
         };
+        let apps = AppMonitor::new(personal.clone(), Box::new(SysProcesses::new()));
         Ok(Self {
             dir,
             personal,
@@ -72,6 +75,7 @@ impl AppState {
             bridge: Mutex::new(None),
             bridge_token: token,
             bridge_error: Mutex::new(None),
+            apps,
         })
     }
 

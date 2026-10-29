@@ -35,6 +35,30 @@ export interface BridgeStatus {
   extension_last_seen: number;
 }
 
+export interface AppEntry {
+  slug: string;
+  name: string;
+  running: boolean;
+  installed: boolean;
+  game: boolean;
+}
+
+export interface AppsStatus {
+  supported: boolean;
+  mode: 'close' | 'remind' | 'off';
+  day: string;
+  /** [slug, seconds the app was open today] */
+  usage: [string, number][];
+  ignored: string[];
+  last_scan_ms: number;
+}
+
+export type AppsNotice =
+  | { kind: 'closing'; slug: string; label: string; seconds_left: number; why: string }
+  | { kind: 'low_time'; slug: string; label: string; seconds_left: number }
+  | { kind: 'closed'; slug: string; label: string; why: string }
+  | { kind: 'over'; slug: string; label: string; why: string };
+
 export class BackendError extends Error {
   constructor(
     public code: string,
@@ -57,6 +81,12 @@ export interface Backend {
   bridgeStatus(): Promise<BridgeStatus | null>;
   bridgeSetRules(rules: unknown): Promise<void>;
   notify(title: string, body: string): Promise<{ delivered: boolean; reason: string | null }>;
+  /** Desktop apps. `null`/no-ops in the browser preview, which cannot see or close anything. */
+  appsList(): Promise<AppEntry[] | null>;
+  appsPush(policy: unknown): Promise<void>;
+  appsStatus(): Promise<AppsStatus | null>;
+  appsUsageRange(from: string, to: string): Promise<[string, string, number][]>;
+  onAppsNotice(cb: (n: AppsNotice) => void): Promise<() => void>;
 }
 
 export const isNative = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -92,6 +122,16 @@ export class NativeBackend implements Backend {
     await call('bridge_set_rules', { rules });
   };
   notify = (title: string, body: string) => call<{ delivered: boolean; reason: string | null }>('notify', { title, body });
+  appsList = () => call<AppEntry[]>('apps_list');
+  appsPush = async (policy: unknown) => {
+    await call('apps_push', { policy });
+  };
+  appsStatus = () => call<AppsStatus>('apps_status');
+  appsUsageRange = (from: string, to: string) => call<[string, string, number][]>('apps_usage_range', { fromDay: from, toDay: to });
+  onAppsNotice = async (cb: (n: AppsNotice) => void) => {
+    const { listen } = await import('@tauri-apps/api/event');
+    return listen<AppsNotice>('focus://apps-notice', (e) => cb(e.payload));
+  };
 }
 
 // ---- browser (preview/tests only) -----------------------------------------------
@@ -246,6 +286,19 @@ export class BrowserBackend implements Backend {
     return null;
   }
   async bridgeSetRules(): Promise<void> {}
+  async appsList(): Promise<AppEntry[] | null> {
+    return null;
+  }
+  async appsPush(): Promise<void> {}
+  async appsStatus(): Promise<AppsStatus | null> {
+    return null;
+  }
+  async appsUsageRange(): Promise<[string, string, number][]> {
+    return [];
+  }
+  async onAppsNotice(): Promise<() => void> {
+    return () => {};
+  }
   async notify(title: string, body: string) {
     if (typeof Notification === 'undefined') return { delivered: false, reason: 'Notifications are not supported here.' };
     if (Notification.permission !== 'granted') return { delivered: false, reason: 'Notification permission has not been granted.' };

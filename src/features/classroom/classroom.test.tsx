@@ -87,7 +87,7 @@ describe('Class page: administrator', () => {
     const publishBtn = await screen.findByRole('button', { name: /publish revision 3/i });
     expect(publishBtn).toBeDisabled(); // nothing changed yet
     expect(screen.getByText('Matches revision 2')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /add platform rule/i }));
+    await user.click(screen.getByRole('button', { name: /add website rule/i }));
     expect(screen.getByText('Unpublished changes')).toBeInTheDocument();
     expect(publishBtn).toBeEnabled();
     await user.click(publishBtn);

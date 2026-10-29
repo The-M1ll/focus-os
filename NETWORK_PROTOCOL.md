@@ -153,6 +153,12 @@ Validation (host before signing, client before applying): ≤ 64 rules, ≤ 32 g
 `[a-z0-9.-]{1,64}` and unique, `daily_minutes ≤ 1440`, windows `start < end ≤ 1440`, goals ≤ 120 chars and ≤ one
 week. Unknown fields are **rejected** (`deny_unknown_fields`). The envelope is ≤ 32 KiB.
 
+**Desktop-app rules** use the same `LimitRule` with a platform id of the form `app.<slug>` (slug = the app's
+process or display name, lower-cased, runs of non-alphanumerics replaced by `-`, e.g. `app.minecraft-launcher`).
+This is a convention inside protocol v1, not a schema change: older clients accept the policy and simply have no
+website named `app.<slug>`. Receiving clients decide locally what, if anything, matches; the protocol carries no
+command, path or argument.
+
 Client verification order (`policy::verify` then `client::apply_policy`): size → `key_id` equals the pinned
 key's id → signature over the exact bytes → schema version supported (otherwise the distinct error
 *unsupported schema*, nothing stored) → strict parse → `class_id` matches → `publisher_key_id` consistent →

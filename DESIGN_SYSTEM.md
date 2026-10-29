@@ -54,8 +54,21 @@ ability to detect contrast failures is itself tested (`harness self-check`).
 Motion explains state change; it never delays an action. Used for: route fade (220 ms), nav underline, timer control
 swaps (180 ms), dialog open, the first-run sequence (≈ 2 s, skippable at every step), arc pulse on completion.
 `MotionConfig` honours the OS setting and the in-app *Animation* setting (`System / Reduced / Full`); CSS animations and
-transitions are collapsed to ~0 ms (including delays) under reduced motion. Verified in Playwright. No parallax,
-particles or cursor effects. The timer's ring uses a 1-second linear transition that exists only to show elapsed time.
+transitions are collapsed to ~0 ms (including delays) under reduced motion. Verified in Playwright. No parallax or
+cursor effects. The timer's ring uses a 1-second linear transition that exists only to show elapsed time.
+
+## Ambient depth (sparkles and 3D shapes)
+Added on request, kept deliberately minimal. `design/Ambient.tsx` + `ambient.css`:
+* **Sparkles** — 22 four-point stars (two crossing hairlines) fixed behind the interface, laid out by a seeded
+  generator (no randomness at render time), twinkling at 3.5–10 s with staggered phases; two slow, very faint colour
+  glows drift behind them. Lime on dark, olive on light; opacity 0.18–0.45 at peak.
+* **Gyro** — three tilted rings turning around a glowing core with one orbiting moon, pure CSS 3D (`perspective`,
+  `preserve-3d`), beside the greeting on Today (hidden below 980 px). **Cube** — a small wireframe cube above every
+  empty state.
+* Rules: decorative only (`aria-hidden`, `pointer-events: none`, no text, no contrast impact), transforms and opacity
+  only (no layout), `contain: strict` on the layer, off with **Settings → Ambient effects**, and under reduced motion
+  the same CSS collapses every animation so shapes stay still and faint. Verified in Playwright (decorative, no overflow,
+  clicks pass through, switch persists, still under reduced motion).
 
 ## Layout and responsiveness
 Max content width 1280 px with 24-px gutters; two-column "7/5" asymmetry on Today; sticky masthead 56 px with

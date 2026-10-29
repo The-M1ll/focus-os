@@ -275,7 +275,7 @@ export function toBridgeRules(effective: EffectiveRule[], platforms: PlatformDef
     day: dayKey(now, rules),
     time_zone: rules.timeZone,
     reset_hour: rules.resetHour,
-    rules: effective.map((r) => ({
+    rules: effective.filter((r) => !r.platform.startsWith('app.')).map((r) => ({
       platform: r.platform,
       domains: platforms.find((p) => p.id === r.platform)?.domains ?? [r.platform],
       daily_limit_minutes: r.dailyLimitMin,

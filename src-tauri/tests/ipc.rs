@@ -421,6 +421,10 @@ fn remote_web_content_cannot_reach_any_command() {
         "class_create",
         "bridge_status",
         "store_export_file",
+        "apps_list",
+        "apps_push",
+        "apps_status",
+        "apps_usage_range",
     ] {
         let r = call_from(
             &a,
@@ -434,4 +438,33 @@ fn remote_web_content_cannot_reach_any_command() {
     }
     // while the same call from the app's own origin works
     assert!(call(&a, "store_get_all", json!({"collection":"notes"})).is_ok());
+}
+
+#[test]
+fn app_commands_validate_input_and_report_honestly() {
+    let dir = tempfile::tempdir().unwrap();
+    let a = instance(dir.path());
+    let s = call(&a, "apps_status", json!({})).unwrap();
+    assert_eq!(s["supported"], true);
+    assert_eq!(s["usage"], json!([]));
+
+    let rule = |slug: &str| json!({"slug": slug, "label": "x", "blocked_now": false, "why": "", "budget_secs": 600, "extra_used_secs": 0, "allowed_until_ms": null});
+    // Rejected: bad day, bad app id.
+    assert!(call(&a, "apps_push", json!({"policy": {"day": "today", "mode": "close", "rules": []}})).is_err());
+    assert!(call(&a, "apps_push", json!({"policy": {"day": "2026-01-05", "mode": "close", "rules": [rule("Not Valid")]}})).is_err());
+    // Accepted: a normal rule, and protected programs are reported as ignored instead of being enforced.
+    call(&a, "apps_push", json!({"policy": {"day": "2026-01-05", "mode": "close", "rules": [rule("roblox"), rule("explorer")]}})).unwrap();
+    let s = call(&a, "apps_status", json!({})).unwrap();
+    assert_eq!(s["day"], "2026-01-05");
+    assert_eq!(s["mode"], "close");
+    assert_eq!(s["ignored"], json!(["explorer"]));
+
+    // The list is an array and never offers a protected program.
+    let list = call(&a, "apps_list", json!({})).unwrap();
+    let names: Vec<String> = list.as_array().unwrap().iter().map(|e| e["slug"].as_str().unwrap().to_string()).collect();
+    assert!(!names.iter().any(|n| n == "explorer" || n == "systemd" || n == "focus-os"), "{names:?}");
+    // Usage range reads from storage.
+    let u = call(&a, "apps_usage_range", json!({"fromDay": "2026-01-01", "toDay": "2026-01-31"})).unwrap();
+    assert_eq!(u, json!([]));
+    assert!(call(&a, "apps_usage_range", json!({"fromDay": "x", "toDay": "y"})).is_ok(), "an empty range is not an error");
 }

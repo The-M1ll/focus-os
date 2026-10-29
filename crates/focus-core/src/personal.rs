@@ -19,6 +19,11 @@ pub const PERSONAL_MIGRATIONS: &[Migration] = &[
         name: "measured_usage",
         sql: include_str!("../migrations/personal_002_usage.sql"),
     },
+    Migration {
+        version: 3,
+        name: "app_usage",
+        sql: include_str!("../migrations/personal_003_app_usage.sql"),
+    },
 ];
 
 pub const MAX_DOC_BYTES: usize = 2 * 1024 * 1024;
@@ -45,6 +50,11 @@ pub enum WriteOp {
         collection: String,
         id: String,
     },
+}
+
+fn check_day(day: &str) -> Result<()> {
+    let ok = day.len() == 10 && day.chars().enumerate().all(|(i, c)| if i == 4 || i == 7 { c == '-' } else { c.is_ascii_digit() });
+    if ok { Ok(()) } else { Err(Error::invalid("day must be YYYY-MM-DD")) }
 }
 
 fn check_name(s: &str, what: &str) -> Result<()> {
@@ -222,6 +232,34 @@ impl PersonalStore {
             params![day, platform, seconds, now_ms()],
         )?;
         Ok(())
+    }
+
+    /// Add seconds an app was open (recorded by the app monitor).
+    pub fn add_app_usage(&self, day: &str, app: &str, seconds: u64) -> Result<()> {
+        check_day(day)?;
+        check_name(app, "app")?;
+        self.db.lock().execute(
+            "INSERT INTO app_usage(day,app,seconds,updated_at) VALUES(?,?,?,?)
+             ON CONFLICT(day,app) DO UPDATE SET seconds=seconds+excluded.seconds, updated_at=excluded.updated_at",
+            params![day, app, seconds as i64, now_ms()],
+        )?;
+        Ok(())
+    }
+
+    /// Seconds each app was open on one day.
+    pub fn app_usage(&self, day: &str) -> Result<Vec<(String, u64)>> {
+        check_day(day)?;
+        Ok(self.app_usage_range(day, day)?.into_iter().map(|(_, a, s)| (a, s)).collect())
+    }
+
+    /// `(day, app, seconds)` for an inclusive range of days.
+    pub fn app_usage_range(&self, from_day: &str, to_day: &str) -> Result<Vec<(String, String, u64)>> {
+        let conn = self.db.lock();
+        let mut st = conn.prepare("SELECT day,app,seconds FROM app_usage WHERE day BETWEEN ? AND ? ORDER BY day,app")?;
+        let rows = st
+            .query_map(params![from_day, to_day], |r| Ok((r.get(0)?, r.get(1)?, r.get::<_, i64>(2)? as u64)))?
+            .collect::<std::result::Result<_, _>>()?;
+        Ok(rows)
     }
 
     pub fn measured_usage(&self, from_day: &str, to_day: &str) -> Result<Vec<MeasuredUsage>> {

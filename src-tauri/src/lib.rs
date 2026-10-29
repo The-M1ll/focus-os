@@ -2,6 +2,7 @@
 //! filesystem access is exposed to the webview, and file dialogs are opened natively so
 //! paths never originate in JavaScript.
 
+mod apps;
 mod classroom;
 mod error;
 mod personal;
@@ -24,6 +25,11 @@ pub fn register_commands<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri
         personal::bridge_status,
         personal::bridge_set_rules,
         personal::notify,
+        apps::apps_list,
+        apps::apps_rescan,
+        apps::apps_push,
+        apps::apps_status,
+        apps::apps_usage_range,
         classroom::class_overview,
         classroom::class_lan_addresses,
         classroom::class_create,
@@ -63,7 +69,10 @@ pub fn run() {
                 std::fs::create_dir_all(&dir)?;
                 let st =
                     AppState::open(dir).map_err(|e| format!("could not open local data: {e}"))?;
+                let monitor = st.apps.clone();
                 app.manage(st);
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(monitor.run(std::sync::Arc::new(move |n| apps::deliver(&handle, n))));
                 Ok(())
             }),
     )

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export const ROUTES = ['today', 'library', 'review', 'plan', 'limits', 'class', 'settings'] as const;
+export const ROUTES = ['today', 'library', 'review', 'plan', 'limits', 'apps', 'class', 'settings'] as const;
 export type Route = (typeof ROUTES)[number];
 
 export const NAV: { route: Route; label: string; key: string }[] = [
@@ -9,7 +9,8 @@ export const NAV: { route: Route; label: string; key: string }[] = [
   { route: 'review', label: 'Review', key: '3' },
   { route: 'plan', label: 'Plan', key: '4' },
   { route: 'limits', label: 'Limits', key: '5' },
-  { route: 'class', label: 'Class', key: '6' },
+  { route: 'apps', label: 'Apps', key: '6' },
+  { route: 'class', label: 'Class', key: '7' },
 ];
 
 const fromHash = (): Route => {

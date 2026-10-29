@@ -1,3 +1,4 @@
+import { Gyro } from '../../design/Ambient';
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, BookOpenCheck, CalendarClock, Coffee, Pause, Play, Plus, RotateCcw, Square, TimerReset, ShieldAlert } from 'lucide-react';
@@ -83,6 +84,7 @@ export function Today() {
   return (
     <div>
       <header className="today-head">
+        {settings.ambient && <Gyro className="today-gyro" size={150} />}
         <p className="label">{dateLabel}</p>
         <h1 className="display">
           {greeting(hour)}

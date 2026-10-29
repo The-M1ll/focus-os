@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { getClassApi, type ClassOverview, type SyncStatus } from '../data/classApi';
-import { getBackend, type BridgeStatus, type MeasuredUsage } from '../data/backend';
+import { getBackend, type AppEntry, type AppsStatus, type BridgeStatus, type MeasuredUsage } from '../data/backend';
 import type { ClassPolicyView } from '../domain/limits';
 
 interface EnvState {
@@ -9,7 +9,13 @@ interface EnvState {
   syncByClass: Record<string, SyncStatus>;
   bridge: BridgeStatus | null;
   measured: MeasuredUsage[];
+  /** `null` = this build cannot see apps (browser preview) or has not answered yet. */
+  apps: AppEntry[] | null;
+  appsStatus: AppsStatus | null;
+  appsUsage: [string, string, number][];
   loaded: boolean;
+  refreshApps(): Promise<void>;
+  refreshAppsStatus(fromDay: string, toDay: string): Promise<void>;
   refreshClasses(): Promise<void>;
   refreshUsage(fromDay: string, toDay: string): Promise<void>;
   setSync(classId: string, s: SyncStatus): void;
@@ -21,7 +27,28 @@ export const useEnv = create<EnvState>((set, get) => ({
   syncByClass: {},
   bridge: null,
   measured: [],
+  apps: null,
+  appsStatus: null,
+  appsUsage: [],
   loaded: false,
+
+  async refreshApps() {
+    try {
+      set({ apps: await getBackend().appsList() });
+    } catch {
+      set({ apps: null });
+    }
+  },
+
+  async refreshAppsStatus(fromDay, toDay) {
+    const be = getBackend();
+    try {
+      const [appsStatus, appsUsage] = await Promise.all([be.appsStatus(), be.appsUsageRange(fromDay, toDay)]);
+      set({ appsStatus, appsUsage });
+    } catch {
+      set({ appsStatus: null });
+    }
+  },
 
   async refreshClasses() {
     const api = getClassApi();

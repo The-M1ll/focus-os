@@ -7,6 +7,7 @@ import { useEnv } from '../state/env';
 import { useDayRules } from '../state/selectors';
 import { NAV, useUI } from './ui-state';
 import { Banner, Button, IconButton, Kbd, Toasts, toast } from '../design/ui';
+import { Ambient } from '../design/Ambient';
 import { Onboarding } from '../features/onboarding/Onboarding';
 import { Palette } from './Palette';
 import { Shortcuts } from './Shortcuts';
@@ -15,6 +16,7 @@ import { getBackend } from '../data/backend';
 import { getClassApi } from '../data/classApi';
 import { dayKey, addDays } from '../domain/time';
 import { allPlatforms, combineRules, toBridgeRules } from '../domain/limits';
+import { toAppsPolicy } from '../domain/apps';
 import { isQuietHours } from '../domain/wellness';
 import { useRemindersLoop } from './useReminders';
 
@@ -22,6 +24,7 @@ const Library = lazy(() => import('../features/library/Library').then((m) => ({ 
 const Review = lazy(() => import('../features/review/Review').then((m) => ({ default: m.Review })));
 const Plan = lazy(() => import('../features/plan/Plan').then((m) => ({ default: m.Plan })));
 const Limits = lazy(() => import('../features/limits/Limits').then((m) => ({ default: m.Limits })));
+const Apps = lazy(() => import('../features/apps/Apps').then((m) => ({ default: m.Apps })));
 const ClassPage = lazy(() => import('../features/classroom/ClassPage').then((m) => ({ default: m.ClassPage })));
 const SettingsPage = lazy(() => import('../features/settings/Settings').then((m) => ({ default: m.SettingsPage })));
 
@@ -103,6 +106,7 @@ export function App() {
     const refresh = () => {
       const today = dayKey(Date.now(), rules);
       void useEnv.getState().refreshUsage(addDays(today, -13), today);
+      if (getBackend().kind === 'native') void useEnv.getState().refreshAppsStatus(addDays(today, -6), today);
     };
     refresh();
     const id = setInterval(refresh, 15_000);
@@ -129,6 +133,33 @@ export function App() {
     for (const m of manualUsage) if (m.day === day) selfReported[m.platform] = (selfReported[m.platform] ?? 0) + m.minutes;
     void getBackend().bridgeSetRules(toBridgeRules(eff, allPlatforms(platforms), rules, now, revision + manualUsage.length, selfReported)).catch(() => undefined);
   }, [ready, bridgeUp, limits, platforms, policies, rules, manualUsage]);
+
+  // ---- desktop apps: push the effective rules to the native monitor, and show its warnings ----
+  const appMode = settings.appEnforcement;
+  useEffect(() => {
+    if (!ready || getBackend().kind !== 'native') return;
+    const push = () => {
+      const now = Date.now();
+      const eff = combineRules(limits, policies, now);
+      void getBackend().appsPush(toAppsPolicy(eff, rules, now, appMode)).catch(() => undefined);
+    };
+    push();
+    const id = setInterval(push, 30_000);
+    return () => clearInterval(id);
+  }, [ready, limits, policies, rules, appMode]);
+
+  useEffect(() => {
+    if (!ready) return;
+    let un = () => {};
+    let gone = false;
+    void getBackend().onAppsNotice((n) => {
+      if (n.kind === 'closing') toast.warn(`${n.label} will close in ${n.seconds_left} s. ${n.why} Save your work.`);
+      else if (n.kind === 'low_time') toast.warn(`${n.label}: about ${Math.ceil(n.seconds_left / 60)} min left. Save your work.`);
+      else if (n.kind === 'closed') toast.warn(`${n.label} was closed. ${n.why}`);
+      else toast.warn(`${n.label}: time is up. ${n.why} (Reminder only: nothing was closed.)`);
+    }).then((f) => { if (gone) f(); else un = f; });
+    return () => { gone = true; un(); };
+  }, [ready]);
 
   useRemindersLoop(ready);
 
@@ -178,10 +209,11 @@ export function App() {
   if (!ready) return <div role="status" className="sr-only">Loading your workspace</div>;
   if (!settings.onboarded) return (<MotionConfig reducedMotion={settings.motion === 'reduce' ? 'always' : settings.motion === 'full' ? 'never' : 'user'}><Onboarding /><Toasts /></MotionConfig>);
 
-  const Screen = { today: Today, library: Library, review: Review, plan: Plan, limits: Limits, class: ClassPage, settings: SettingsPage }[route];
+  const Screen = { today: Today, library: Library, review: Review, plan: Plan, limits: Limits, apps: Apps, class: ClassPage, settings: SettingsPage }[route];
 
   return (
     <MotionConfig reducedMotion={settings.motion === 'reduce' ? 'always' : settings.motion === 'full' ? 'never' : 'user'}>
+      {settings.ambient && <Ambient />}
       <div className="app">
         <a className="skip-link" href="#main">Skip to content</a>
         <header className="masthead">

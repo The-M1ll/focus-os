@@ -15,6 +15,8 @@ export const SettingsSchema = z.object({
   theme: z.enum(['dark', 'light', 'system']).default('dark'),
   motion: z.enum(['system', 'reduce', 'full']).default('system'),
   homeFocus: z.enum(['plan', 'learn', 'limits']).default('plan'),
+  ambient: z.boolean().default(true),
+  appEnforcement: z.enum(['close', 'remind', 'off']).default('close'),
   focus: z
     .object({
       focusMin: z.number().int().min(1).max(180).default(25),

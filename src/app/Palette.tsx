@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, CalendarDays, CornerDownLeft, FileText, Layers, Play, Plus, Search, Settings, ShieldCheck, Timer, Users } from 'lucide-react';
+import { BookOpen, CalendarDays, CornerDownLeft, FileText, Gamepad2, Layers, Play, Plus, Search, Settings, ShieldCheck, Timer, Users } from 'lucide-react';
 import { Dialog, Kbd } from '../design/ui';
 import { useData } from '../data/store';
 import { NAV, type Route, useUI } from './ui-state';
@@ -19,6 +19,7 @@ const ICONS: Record<Route, React.ReactNode> = {
   review: <Layers size={16} aria-hidden />,
   plan: <CalendarDays size={16} aria-hidden />,
   limits: <ShieldCheck size={16} aria-hidden />,
+  apps: <Gamepad2 size={16} aria-hidden />,
   class: <Users size={16} aria-hidden />,
   settings: <Settings size={16} aria-hidden />,
 };

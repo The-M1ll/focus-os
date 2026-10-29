@@ -37,7 +37,7 @@ async function axe(page: Page) {
   await page.addScriptTag({ content: AXE_SOURCE });
   // Mid-fade text is semi-transparent and fails contrast on slow machines; audit the settled page.
   await page.evaluate(async () => {
-    for (let i = 0; i < 50 && document.getAnimations().some((a) => a.playState === 'running'); i++) await new Promise((r) => setTimeout(r, 100));
+    for (let i = 0; i < 50 && document.getAnimations().some((a) => a.playState === 'running' && a.effect?.getComputedTiming().iterations !== Infinity); i++) await new Promise((r) => setTimeout(r, 100));
   });
   return page.evaluate(async () => {
     // @ts-expect-error injected global
@@ -144,7 +144,7 @@ test.describe('layout', () => {
     test(`no horizontal overflow at ${w}x${h} on every screen`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h });
       await seed(page);
-      for (const r of ['today', 'library', 'review', 'plan', 'limits', 'class', 'settings']) {
+      for (const r of ['today', 'library', 'review', 'plan', 'limits', 'apps', 'class', 'settings']) {
         await page.goto(`/#/${r}`);
         await page.waitForTimeout(150);
         const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -167,7 +167,7 @@ test.describe('accessibility (axe-core, real rendering incl. colour contrast)', 
   });
 
   for (const theme of ['dark', 'light'] as const) {
-    for (const r of ['today', 'library', 'review', 'plan', 'limits', 'class', 'settings']) {
+    for (const r of ['today', 'library', 'review', 'plan', 'limits', 'apps', 'class', 'settings']) {
       test(`${r} — ${theme}`, async ({ page }) => {
         await seed(page, theme);
         await page.goto(`/#/${r}`);
@@ -218,5 +218,44 @@ test.describe('accessibility (axe-core, real rendering incl. colour contrast)', 
     await seed(page);
     const dur = await page.evaluate(() => getComputedStyle(document.querySelector('.dial-arc')!).transitionDuration);
     expect(parseFloat(dur)).toBeLessThan(0.05);
+  });
+
+  test.describe('ambient effects (sparkles and 3D shapes)', () => {
+    test('are decorative: hidden from assistive tech, never intercept the pointer, and do not overflow', async ({ page }) => {
+      await seed(page);
+      const info = await page.evaluate(() => {
+        const a = document.querySelector('.ambient') as HTMLElement;
+        const g = document.querySelector('.gyro') as HTMLElement;
+        return { ariaHidden: a.getAttribute('aria-hidden'), pe: getComputedStyle(a).pointerEvents, sparks: a.querySelectorAll('.spark').length, gyroHidden: g.getAttribute('aria-hidden'), over: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+      });
+      expect(info).toMatchObject({ ariaHidden: 'true', pe: 'none', gyroHidden: 'true' });
+      expect(info.sparks).toBeGreaterThan(10);
+      expect(info.over).toBeLessThanOrEqual(1);
+      // Clicking where a sparkle sits still reaches the page: the start button works through the layer.
+      await page.getByRole('button', { name: /start 25 min/i }).click();
+      await expect(page.getByRole('button', { name: /pause/i })).toBeVisible();
+    });
+
+    test('can be switched off in Settings and stay off', async ({ page }) => {
+      await seed(page);
+      await page.keyboard.press('Control+k');
+      await page.getByLabel(/search commands, notes and cards/i).fill('settings');
+      await page.keyboard.press('Enter');
+      await page.getByRole('switch', { name: /ambient effects/i }).uncheck();
+      await expect(page.locator('.ambient')).toHaveCount(0);
+      await page.reload();
+      await page.getByRole('timer').waitFor();
+      await expect(page.locator('.ambient')).toHaveCount(0);
+      await expect(page.locator('.gyro')).toHaveCount(0);
+    });
+
+    test('are still when animation is reduced', async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await seed(page);
+      const dur = await page.evaluate(() => getComputedStyle(document.querySelector('.spark')!).animationDuration);
+      expect(parseFloat(dur)).toBeLessThan(0.05);
+      const spin = await page.evaluate(() => getComputedStyle(document.querySelector('.gyro-body')!).animationDuration);
+      expect(parseFloat(spin)).toBeLessThan(0.05);
+    });
   });
 });

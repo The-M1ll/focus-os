@@ -27,16 +27,17 @@ export const dayOffset = (n: number) => dayKey(Date.now() + n * 86_400_000, { ti
 type Seed = Partial<Record<string, object[]>>;
 
 /** Fresh in-memory app state. `seed` maps collection -> documents. Returns the backend for assertions. */
-export async function boot(seed: Seed = {}, opts: { onboarded?: boolean; route?: string; classApi?: ClassApi } = {}) {
+export async function boot(seed: Seed = {}, opts: { onboarded?: boolean; route?: string; classApi?: ClassApi; patchBackend?: (be: BrowserBackend) => void } = {}) {
   const storage = new MemStorage();
   const be = new BrowserBackend(storage);
+  opts.patchBackend?.(be);
   setBackend(be);
   setClassApi(opts.classApi ?? null);
   // Start every test from a genuinely cold app: nothing loaded, nothing left over from the previous test.
   useData.setState({ ready: false, loadError: null, issues: [], save: { kind: 'idle' }, settings: SettingsSchema.parse({}), docs: Object.fromEntries(Object.keys(COLLECTIONS).map((k) => [k, []])) as never });
   useToasts.setState({ items: [] });
   useTimer.setState({ timer: null, recoveredNotice: null, lastSession: null, persistError: null });
-  useEnv.setState({ classes: [], policies: [], syncByClass: {}, bridge: null, measured: [], loaded: false });
+  useEnv.setState({ classes: [], policies: [], syncByClass: {}, bridge: null, measured: [], apps: null, appsStatus: null, appsUsage: [], loaded: false });
   useUI.setState({ route: 'today', paletteOpen: false, shortcutsOpen: false, focusTaskId: null, libSubjectId: null, libTopicId: null, libTab: 'notes', openNoteId: null, pendingAction: null, reviewMode: null });
   const withSettings: Seed = { ...seed };
   if (opts.onboarded !== false && !withSettings.settings) withSettings.settings = [{ id: 'main', onboarded: true, displayName: 'Aziza', timeZone: 'UTC', resetHour: 4 }];

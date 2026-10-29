@@ -1,3 +1,4 @@
+import { Cube } from './Ambient';
 import { type ButtonHTMLAttributes, type ComponentProps, type ReactNode, useEffect, useId, useRef, cloneElement, isValidElement, type ReactElement } from 'react';
 import { AlertTriangle, CheckCircle2, Info, Loader2, X } from 'lucide-react';
 import { create } from 'zustand';
@@ -137,6 +138,7 @@ export function SectionHead({ index, title, children }: { index?: string; title:
 export function Empty({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
   return (
     <div className="empty">
+      <Cube size={36} />
       <p className="display-italic">{title}</p>
       {children && <p>{children}</p>}
       {action}

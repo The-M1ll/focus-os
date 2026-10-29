@@ -4,6 +4,7 @@ import { useData } from '../../data/store';
 import { newId } from '../../data/ids';
 import { attempt, Button, Field, Input, Pill, Select, Switch, toast } from '../../design/ui';
 import { allPlatforms, type ClassRule } from '../../domain/limits';
+import { appDisplayName, appRuleId, appSlug, appSlugOf, isAppRule, KNOWN_APPS } from '../../domain/apps';
 import { getClassApi, type PolicyPayload, type StoredPolicy } from '../../data/classApi';
 
 interface RuleRow {
@@ -58,6 +59,7 @@ export function PolicyEditor({ classId, current, onPublished }: { classId: strin
   const [goals, setGoals] = useState<GoalRow[]>(initial.goals);
   const [allow, setAllow] = useState(initial.allowPersonal);
   const [busy, setBusy] = useState(false);
+  const [appName, setAppName] = useState('');
 
   const built = toPayload(rules, goals, allow);
   const dirty = JSON.stringify(built.payload ?? null) !== JSON.stringify(current?.envelope.payload ?? { limits: [], study_goals: [], allow_personal_limits: true, progress_sharing: 'none' });
@@ -73,18 +75,26 @@ export function PolicyEditor({ classId, current, onPublished }: { classId: strin
 
   const used = new Set(rules.map((r) => r.platform));
   const free = platforms.filter((p) => !used.has(p.id));
+  const nameFor = (id: string) => (isAppRule(id) ? appDisplayName(appSlugOf(id)) : (platforms.find((p) => p.id === id)?.name ?? id));
+  const addApp = () => {
+    const slug = appSlug(appName);
+    if (!slug) return toast.warn('Type the name of an app or game first.');
+    if (used.has(appRuleId(slug))) return toast.warn(`${appDisplayName(slug)} already has a rule.`);
+    setRules([...rules, { key: newId('r'), platform: appRuleId(slug), mode: 'budget', minutes: 30, start: '15:00', end: '20:00' }]);
+    setAppName('');
+  };
 
   return (
     <div>
       <div className="stack">
         <Switch label="Members may add their own stricter limits" checked={allow} onChange={setAllow} description="Personal rules can only tighten class rules, never loosen them." />
         <div>
-          <p className="label" style={{ marginBottom: 6 }}>Platform rules</p>
-          {rules.length === 0 && <p className="faint" style={{ padding: 'var(--s-3) 0' }}>No platform rules. Members are only limited by what they set themselves.</p>}
+          <p className="label" style={{ marginBottom: 6 }}>Rules</p>
+          {rules.length === 0 && <p className="faint" style={{ padding: 'var(--s-3) 0' }}>No rules. Members are only limited by what they set themselves.</p>}
           {rules.map((r, i) => (
             <div className="policy-row" key={r.key}>
-              <Field label="Platform"><Select value={r.platform} onChange={(e) => setRules(rules.map((x, j) => (j === i ? { ...x, platform: e.target.value } : x)))}>
-                {[platforms.find((p) => p.id === r.platform) ?? { id: r.platform, name: r.platform }, ...free].map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              <Field label={isAppRule(r.platform) ? 'App on the computer' : 'Website platform'}><Select value={r.platform} disabled={isAppRule(r.platform)} onChange={(e) => setRules(rules.map((x, j) => (j === i ? { ...x, platform: e.target.value } : x)))}>
+                {(isAppRule(r.platform) ? [{ id: r.platform, name: nameFor(r.platform) }] : [{ id: r.platform, name: nameFor(r.platform) }, ...free]).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </Select></Field>
               <Field label="Rule"><Select value={r.mode} onChange={(e) => setRules(rules.map((x, j) => (j === i ? { ...x, mode: e.target.value as RuleRow['mode'] } : x)))}>
                 <option value="budget">Daily budget</option><option value="hours">Allowed hours</option><option value="blocked">Blocked</option>
@@ -92,10 +102,19 @@ export function PolicyEditor({ classId, current, onPublished }: { classId: strin
               {r.mode === 'budget' && <Field label="Minutes per day"><Input type="number" min={0} max={1440} value={r.minutes} onChange={(e) => setRules(rules.map((x, j) => (j === i ? { ...x, minutes: Number(e.target.value) } : x)))} /></Field>}
               {r.mode === 'hours' && <div className="cluster"><Field label="From"><Input type="time" value={r.start} onChange={(e) => setRules(rules.map((x, j) => (j === i ? { ...x, start: e.target.value } : x)))} /></Field><Field label="Until"><Input type="time" value={r.end} onChange={(e) => setRules(rules.map((x, j) => (j === i ? { ...x, end: e.target.value } : x)))} /></Field></div>}
               {r.mode === 'blocked' && <p className="muted" style={{ alignSelf: 'center' }}>Not available at any time</p>}
-              <Button variant="quiet" size="sm" aria-label={`Remove rule for ${r.platform}`} onClick={() => setRules(rules.filter((_, j) => j !== i))}><Trash2 size={15} aria-hidden /></Button>
+              <Button variant="quiet" size="sm" aria-label={`Remove rule for ${nameFor(r.platform)}`} onClick={() => setRules(rules.filter((_, j) => j !== i))}><Trash2 size={15} aria-hidden /></Button>
             </div>
           ))}
-          <Button size="sm" style={{ marginTop: 'var(--s-3)' }} disabled={free.length === 0} onClick={() => setRules([...rules, { key: newId('r'), platform: free[0]!.id, mode: 'budget', minutes: 30, start: '15:00', end: '20:00' }])}><Plus size={14} aria-hidden /> Add platform rule</Button>
+          <Button size="sm" style={{ marginTop: 'var(--s-3)' }} disabled={free.length === 0} onClick={() => setRules([...rules, { key: newId('r'), platform: free[0]!.id, mode: 'budget', minutes: 30, start: '15:00', end: '20:00' }])}><Plus size={14} aria-hidden /> Add website rule</Button>
+        </div>
+        <div>
+          <p className="label" style={{ marginBottom: 6 }}>App and game rules</p>
+          <p className="faint" style={{ fontSize: 'var(--fs-small)', marginBottom: 'var(--s-3)' }}>Apply to the program named below on every member’s computer. Members’ FOCUS OS counts how long it is open, warns, then closes it. The operating system, terminals and web browsers can never be closed this way; rules naming them are ignored. New rules appear in the list above, where you set the budget or hours.</p>
+          <div className="cluster" style={{ alignItems: 'end' }}>
+            <Field label="App or game name"><Input value={appName} maxLength={56} list="class-known-apps" placeholder="Roblox, Steam, Minecraft Launcher…" onChange={(e) => setAppName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addApp(); } }} /></Field>
+            <datalist id="class-known-apps">{KNOWN_APPS.map((k) => <option key={k.slug} value={k.name} />)}</datalist>
+            <Button size="sm" onClick={addApp}><Plus size={14} aria-hidden /> Add app rule</Button>
+          </div>
         </div>
         <div>
           <p className="label" style={{ marginBottom: 6 }}>Class study goals</p>

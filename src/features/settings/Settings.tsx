@@ -84,6 +84,7 @@ export function SettingsPage() {
               <Field label="Your name" hint="Used only for the greeting."><Input value={s.displayName} maxLength={60} onChange={(e) => update((x) => ({ ...x, displayName: e.target.value }))} /></Field>
               <div className="field"><span className="field-label">Theme</span><Segmented label="Theme" value={s.theme} onChange={(v) => update((x) => ({ ...x, theme: v }))} options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }, { value: 'system', label: 'Match system' }]} /></div>
               <div className="field"><span className="field-label">Animation</span><Segmented label="Animation" value={s.motion} onChange={(v) => update((x) => ({ ...x, motion: v }))} options={[{ value: 'system', label: 'Match system' }, { value: 'reduce', label: 'Reduced' }, { value: 'full', label: 'Full' }]} /></div>
+              <div className="field"><Switch label="Ambient effects" description="Quiet sparkles in the background and small 3D shapes. Still and faint when animation is reduced." checked={s.ambient} onChange={(v) => update((x) => ({ ...x, ambient: v }))} /></div>
               <Field label="Time zone" hint="Decides when “today” starts for limits, plans and reviews.">
                 <Select value={s.timeZone} onChange={(e) => isValidZone(e.target.value) && update((x) => ({ ...x, timeZone: e.target.value }))}>{tzList.map((z) => <option key={z} value={z}>{z}</option>)}</Select>
               </Field>

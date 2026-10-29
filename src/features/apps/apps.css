@@ -1,0 +1,7 @@
+.app-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.5fr) auto; gap: var(--s-5); align-items: center; padding: var(--s-4) 0; border-bottom: 1px solid var(--line); }
+.app-row:last-child { border-bottom: 0; }
+.app-name { font-family: var(--font-display); font-size: var(--fs-h3); letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.app-find { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--s-3); align-items: end; margin-bottom: var(--s-3); }
+.app-list { max-height: 520px; overflow-y: auto; border-top: 1px solid var(--line); }
+.app-list .row { padding-right: var(--s-2); }
+@media (max-width: 980px) { .app-row { grid-template-columns: 1fr; gap: var(--s-3); } .app-find { grid-template-columns: 1fr; } }

@@ -5,7 +5,7 @@ const mod = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator
 
 const ROWS: [string[], string][] = [
   [[mod, 'K'], 'Command palette'],
-  [['1', '–', '6'], 'Go to Today, Library, Review, Plan, Limits, Class'],
+  [['1', '–', '7'], 'Go to Today, Library, Review, Plan, Limits, Apps, Class'],
   [['Space'], 'Start / pause the focus timer (Today)'],
   [['Space'], 'Show the answer (card review)'],
   [['1', '–', '4'], 'Grade a card: Again, Hard, Good, Easy (after the answer is shown)'],

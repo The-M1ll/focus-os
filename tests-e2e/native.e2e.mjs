@@ -170,6 +170,31 @@ try {
   await go('today');
   await waitFor(async () => (await has('Session interrupted')) || (await has('Resume')), 'recovered timer');
   check('the paused timer is still there after restart', true);
+
+  // ---- 7. Apps: a real program is listed, warned about and then really closed ---------------------------------------
+  const victim = spawn('sleep', ['600'], { stdio: 'ignore' });
+  let victimExit = null;
+  victim.on('exit', (code, signal) => { victimExit = signal ?? code; });
+  await go('apps');
+  await waitFor(async () => (await has('Apps on this computer')) && (await has('Watching this computer')), 'the Apps screen reporting the monitor');
+  check('Apps screen says the desktop monitor is watching (not the browser-preview wording)', !(await has('Desktop app only')));
+  await waitFor(async () => (await x("//ul[@aria-label='Apps found on this computer']//span[normalize-space(.)='Sleep']")).length, 'the running "sleep" program in the list', 20000);
+  check('a program that is really running on this computer appears in the app list', true);
+  check('protected programs (shell, init, FOCUS OS) are never offered', !(await exec("return [...document.querySelectorAll('[aria-label=\"Apps found on this computer\"] .row-title')].map(e=>e.textContent.toLowerCase()).some(n=>['bash','systemd','focus-os','focus os','sh','init'].includes(n))")));
+  await click(await waitFor(async () => (await x("//button[@aria-label='Set a limit for Sleep']"))[0], 'Set limit for Sleep'));
+  const minutes = await byLabel('Minutes per day');
+  await exec('arguments[0].select()', [{ [E]: minutes }]);
+  await type(minutes, '0');
+  await click(await btn('Save rule'));
+  await waitFor(async () => db('personal.db', "select json from documents where collection='limits'").some((r) => JSON.parse(r[0]).platform === 'app.sleep'), 'the app rule in SQLite');
+  check('an app rule created in the UI lands in native SQLite as app.<name>', true);
+  await waitFor(async () => (await has('Sleep will close in')) || (await has('time is up')), 'the closing warning', 40000);
+  check('the student is warned before anything is closed', victimExit === null);
+  await waitFor(async () => victimExit !== null, 'the program to be closed by FOCUS OS', 120000);
+  check('after the grace period FOCUS OS really ended the program', victimExit !== null, String(victimExit));
+  const usage = db('personal.db', "select app, seconds from app_usage where app='sleep'");
+  check('open time was measured and stored on this computer (app_usage)', usage.length === 1 && usage[0][1] >= 10, JSON.stringify(usage));
+  if (victimExit === null) victim.kill();
 } catch (e) {
   console.log('ERROR', e.stack ?? e);
   results.push(false);

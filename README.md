@@ -1,7 +1,7 @@
 # FOCUS OS
 
 A calm, local-first desktop study environment: focus timer, notes, flashcards with spaced repetition, quizzes, a
-realistic homework/exam planner, honest distraction limits, and a **serverless classroom** where the teacher's
+realistic homework/exam planner, honest distraction limits for websites **and desktop apps/games**, and a **serverless classroom** where the teacher's
 computer temporarily hosts the class over the local network. No account, no cloud, no telemetry, works offline.
 
 * React + TypeScript (strict) · Vite · Tauri 2 · Rust · SQLite
@@ -56,6 +56,13 @@ npm run build:extension          # outputs extension/dist
 2. In FOCUS OS open **Limits → Connect the browser extension**, copy the address and token.
 3. Paste them in the extension's options page and press **Connect**. Limits now show *Enforced in browser*.
 Without the extension, limits are saved but shown as **Not enforced** — the app never pretends otherwise.
+
+## Limiting apps and games
+Open **Apps** (key `6`). It lists what is running or installed on this computer (games first). Pick one, choose a daily
+budget and/or allowed hours; FOCUS OS counts how long the app is **open**, warns you, then closes it. If you joined a
+class, rules the teacher publishes for apps appear here automatically (the teacher adds them under **Class → Rules →
+App and game rules**). *Remind only* and *Off* are one click away and the screen always says what is not enforced.
+The operating system, terminals and browsers are never touched. See `KNOWN_LIMITATIONS.md` for what this cannot do.
 
 ## Classroom quick start
 * **Teacher:** Class → *Create a class* (choose your Wi-Fi interface and an administrator passphrase) → *Save a recovery

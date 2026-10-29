@@ -5,6 +5,7 @@ import { useEnv } from '../../state/env';
 import { useUI } from '../../app/ui-state';
 import { useDayRules, useNow, useTodayKey } from '../../state/selectors';
 import { attempt, Button, Empty, Meter, Pill, SectionHead, toast } from '../../design/ui';
+import { isAppRule } from '../../domain/apps';
 import { aggregateUsage, allPlatforms, combineRules, evaluate, extensionLink, type LimitState } from '../../domain/limits';
 import { addDays, rangeDays } from '../../domain/time';
 import { useLimitInputs } from './useLimitInputs';
@@ -53,7 +54,7 @@ export function Limits() {
 
   const platforms = useMemo(() => allPlatforms(docs.platforms), [docs.platforms]);
   const link = extensionLink(inputs.extensionLastSeen, now, inputs.bridgeUp, inputs.preview);
-  const effective = useMemo(() => combineRules(docs.limits, inputs.policies, now), [docs.limits, inputs.policies, now]);
+  const effective = useMemo(() => combineRules(docs.limits, inputs.policies, now).filter((e) => !isAppRule(e.platform)), [docs.limits, inputs.policies, now]);
   const usage = useMemo(() => aggregateUsage(inputs.measured, docs.manual_usage, today), [inputs.measured, docs.manual_usage, today]);
   const personalAllowed = inputs.policies.every((p) => p.allowPersonalLimits);
   const unconfigured = platforms.filter((p) => !effective.some((e) => e.platform === p.id));
@@ -99,9 +100,9 @@ export function Limits() {
             <ShieldAlert size={20} aria-hidden className="faint" />
             <div className="row-main">
               <span className="row-title">Apps outside the browser</span>
-              <span className="row-sub">Not supported in this version. Time in desktop and phone apps is never measured automatically; you can add it yourself and it will be labelled self-reported.</span>
+              <span className="row-sub">Games and other programs on this computer are measured and limited in the <button className="btn btn-quiet btn-sm" style={{ height: 'auto', padding: '0 4px' }} onClick={() => useUI.getState().go('apps')}>Apps</button> section. Phone apps are not covered, and time in them is only what you add yourself, labelled self-reported.</span>
             </div>
-            <Pill>Unavailable</Pill>
+            <Pill>See Apps</Pill>
           </li>
         </ul>
         {link !== 'connected' && bridge?.listening && (

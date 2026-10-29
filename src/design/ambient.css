@@ -1,0 +1,46 @@
+/* Ambient depth: sparkles, soft glows and CSS-3D shapes. Decorative only. */
+:root { --spark: #cfef5b; --spark-glow: rgb(207 239 91 / 0.55); --ambient-a: rgb(207 239 91 / 0.07); --ambient-b: rgb(138 180 248 / 0.05); }
+:root[data-theme='light'] { --spark: #6b8a10; --spark-glow: rgb(107 138 16 / 0.35); --ambient-a: rgb(107 138 16 / 0.08); --ambient-b: rgb(31 95 191 / 0.05); }
+
+.ambient { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; contain: strict; }
+.app { position: relative; z-index: 1; }
+
+.ambient-glow { position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%; filter: blur(40px); will-change: transform; }
+.ambient-glow-a { left: -20vmax; top: -25vmax; background: radial-gradient(closest-side, var(--ambient-a), transparent); animation: drift-a 48s ease-in-out infinite alternate; }
+.ambient-glow-b { right: -25vmax; bottom: -30vmax; background: radial-gradient(closest-side, var(--ambient-b), transparent); animation: drift-b 60s ease-in-out infinite alternate; }
+@keyframes drift-a { to { transform: translate3d(8vmax, 6vmax, 0); } }
+@keyframes drift-b { to { transform: translate3d(-7vmax, -5vmax, 0); } }
+
+/* a four-point sparkle: two hairlines crossing */
+.spark { position: absolute; opacity: var(--o, 0.35); animation: twinkle var(--d, 5s) ease-in-out var(--delay, 0s) infinite; will-change: transform, opacity; filter: drop-shadow(0 0 3px var(--spark-glow)); }
+.spark::before, .spark::after { content: ''; position: absolute; background: var(--spark); border-radius: 2px; }
+.spark::before { left: 50%; top: 0; bottom: 0; width: 1.5px; transform: translateX(-50%); }
+.spark::after { top: 50%; left: 0; right: 0; height: 1.5px; transform: translateY(-50%); }
+@keyframes twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.35) rotate(0deg); }
+  50% { opacity: var(--o, 0.6); transform: scale(1) rotate(45deg); }
+}
+
+/* gyro: three tilted rings around a core */
+.gyro { perspective: 700px; flex: none; }
+.gyro-body { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transform: rotateX(-18deg) rotateY(25deg); animation: gyro-spin 26s linear infinite; }
+.gyro-ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--accent); opacity: 0.75; backface-visibility: visible; }
+.gyro-ring:nth-child(1) { transform: rotateX(72deg); }
+.gyro-ring:nth-child(2) { transform: rotateY(72deg) scale(0.82); border-color: var(--text-3); opacity: 0.6; }
+.gyro-ring:nth-child(3) { transform: rotateX(30deg) rotateY(30deg) scale(0.62); border-color: var(--line-strong); opacity: 0.9; }
+.gyro-core { position: absolute; left: 50%; top: 50%; width: 17%; aspect-ratio: 1; margin: -8.5% 0 0 -8.5%; border-radius: 50%; background: radial-gradient(circle at 32% 30%, #f6ffc9, var(--accent) 52%, var(--accent-dim)); box-shadow: 0 0 28px var(--accent-wash), 0 0 8px var(--spark-glow); }
+.gyro-orbit { position: absolute; inset: 0; transform: rotateX(72deg); transform-style: preserve-3d; }
+.gyro-moon { position: absolute; left: 50%; top: 50%; width: 8%; aspect-ratio: 1; margin: -4% 0 0 -4%; border-radius: 50%; background: var(--text); animation: moon 7s linear infinite; }
+@keyframes gyro-spin { to { transform: rotateX(-18deg) rotateY(385deg); } }
+@keyframes moon { from { transform: rotate(0deg) translateX(calc(var(--gyro-size) * 0.5)); } to { transform: rotate(360deg) translateX(calc(var(--gyro-size) * 0.5)); } }
+
+/* cube */
+.cube { perspective: 400px; margin: 0 0 var(--s-3); }
+.cube-body { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transform: rotateX(-24deg) rotateY(35deg); animation: cube-spin 22s linear infinite; }
+.cube-face { position: absolute; inset: 0; border: 1.5px solid var(--text-3); background: var(--accent-wash); }
+@keyframes cube-spin { to { transform: rotateX(-24deg) rotateY(395deg); } }
+
+/* where the gyro lives */
+.today-head { position: relative; }
+.today-gyro { position: absolute; right: 0; top: -8px; }
+@media (max-width: 980px) { .today-gyro { display: none; } }

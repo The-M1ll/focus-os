@@ -286,7 +286,7 @@ describe('Limits (browser preview: nothing can be enforced and the UI must say s
     expect(within(row).getByText(/Configured, but not enforced/)).toBeInTheDocument();
     expect(within(row).getByText(/Measured/).parentElement).toHaveTextContent('Measured 0 min');
     expect(within(row).getByText(/Self-reported/).parentElement).toHaveTextContent('Self-reported 12 min');
-    expect(screen.getByText(/never measured automatically/i)).toBeInTheDocument();
+    expect(screen.getByText(/phone apps are not covered/i)).toBeInTheDocument();
   });
 
   it('creates a personal rule with validation', async () => {

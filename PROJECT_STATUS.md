@@ -20,6 +20,8 @@ Wi-Fi trials are **not** done.
 | Planner: tasks, priorities, estimate vs actual, overrun advice, catch-up proposals, week workload, exams, revision plans, weekly review | ✅ | 17 planner tests + flows |
 | Limits: budgets, hours, weekdays, warnings, pause, class+personal precedence, measured vs self-reported, derived enforcement status | ✅ | 17 limits tests + flows |
 | Browser extension (measure foreground time, upload, block/unblock) | ✅ real Chromium | `extension.e2e.mjs` 12/12 |
+| **Apps**: list apps/games, personal and class app rules, open-time measurement, warn → polite close → forced close, protected programs, Remind/Off modes | ✅ on Linux (real processes); ⚠️ Windows/macOS untested | `apps.rs` unit tests, `tests/apps.rs`, IPC test, 8 UI tests, native e2e closes a real program through the UI |
+| Ambient depth: sparkles, CSS-3D gyro and cube, switchable | ✅ | Playwright (decorative, no overflow, click-through, switch, reduced motion) |
 | Wellness reminders, quiet hours, breaks | ✅ logic + in-app delivery | 9 tests; system-notification delivery **unobserved** |
 | Classroom: create offline, pair (QR/code/manual), join, signed live policy sync, ack tracking, removal, audit, rotate/export/transfer/recovery, re-discovery | ✅ | 26 Rust tests + IPC lifecycle + native e2e with independent Node device |
 | Data safety: transactional writes, rollback on failure, quarantine of unreadable data, verified backups, schema-downgrade refusal | ✅ | store/personal/IPC tests |
@@ -28,7 +30,8 @@ Wi-Fi trials are **not** done.
 | Packaging | 🟡 Linux `.deb` builds (7.2 MiB, release profile); package contents inspected, but it was **not installed or launched** from the package. The app icon in it is still a flat placeholder. | `tauri build --bundles deb` |
 
 ## What is partial
-* **Enforcement** exists for websites in Chromium browsers only; apps are explicitly "Unavailable".
+* **Enforcement**: websites in Chromium browsers (extension) and desktop apps/games (native monitor: counts open time,
+  warns, then closes). Phone apps are not covered. The app monitor is verified on Linux with real processes only.
 * **Notifications**: in-app delivery works; the OS notification plugin is wired but its delivery wasn't observed.
 * **Classroom on real networks**: protocol and recovery paths verified with real sockets on one machine; router/firewall/
   client-isolation behaviour is documented but untested.
@@ -36,7 +39,7 @@ Wi-Fi trials are **not** done.
 
 ## What is not implemented (by decision or not yet)
 Optional AI helpers; family/guardian views and a teacher role; images/audio in notes and cards; TLS for the classroom
-channel; OS-keychain storage for device keys; native app measurement; Firefox/Safari extensions; Windows/macOS builds;
+channel; OS-keychain storage for device keys; Firefox/Safari extensions; Windows/macOS builds;
 code signing/auto-update; localisation. See `KNOWN_LIMITATIONS.md` (with roadmap).
 
 ## Defects found and fixed during verification (each with a regression test)

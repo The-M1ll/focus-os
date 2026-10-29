@@ -115,7 +115,21 @@ Every rule carries its origin. Usage is two separate numbers: **measured** (from
 **self-reported** (typed by the student); both are shown, neither is invented. Status is *derived*: enforcement is
 `enforced_in_browser` only if the extension has contacted the bridge in the last two minutes; otherwise rules are
 shown as "configured, not enforced" with the reason (never connected / silent / bridge down / browser preview).
-Apps outside the browser are never claimed.
+Apps outside the browser are covered only by the native app monitor below, and only when it is on.
+
+### Apps (`domain/apps.ts`, `crates/focus-core/src/apps.rs`)
+An app rule is an ordinary limit rule whose platform id is `app.<slug>` (slug = lower-case hyphenated process/app
+name, identical in TS and Rust, tested on both sides). It therefore travels through class policy (schema v1 unchanged;
+ids fit the existing platform alphabet), precedence and storage like any website rule. The frontend computes the
+*effective* app rules and pushes `{day, mode, rules[{slug, blocked_now, why, budget_secs, extra_used_secs,
+allowed_until_ms}]}` to the native monitor every 30 s and on any change; the monitor needs no clock zone or calendar
+logic of its own. Every 5 s it lists processes (`sysinfo`), maps them to rule slugs by exact name (+ aliases), adds
+elapsed seconds (capped at 30 s per tick, so sleep is not counted) to `app_usage` in `personal.db`, and runs the pure
+`Enforcer`: *low-time notice at ≤ 60 s left → grace → polite close → forced close after 20 s*. Modes: `close`,
+`remind` (never kills), `off` (counts only). Protected processes (OS, shells, browsers, FOCUS OS) are filtered out
+both from the list and from enforcement. Notices go to the window (`focus://apps-notice` event) and to the OS
+notification centre. Honest status: the Apps screen says "Watching this computer" only when the native monitor
+answers and the mode is not `off`.
 
 ### Wellness (`domain/wellness.ts`)
 Reminders count only *running focus time*, start a full interval after the first observed focus second, honour quiet

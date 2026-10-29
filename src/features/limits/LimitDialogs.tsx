@@ -4,6 +4,7 @@ import { newId } from '../../data/ids';
 import { useTodayKey } from '../../state/selectors';
 import { attempt, Banner, Button, Dialog, Field, Input, Select, Switch, toast } from '../../design/ui';
 import { allPlatforms } from '../../domain/limits';
+import { appDisplayName, appSlugOf, isAppRule } from '../../domain/apps';
 import type { PersonalLimit } from '../../domain/schemas';
 import { isDayKey } from '../../domain/time';
 
@@ -17,7 +18,9 @@ export function PersonalLimitDialog(props: { open: boolean; platformId: string |
 
 function PersonalLimitForm({ platformId, onClose, personalAllowed, blockedByClass }: { platformId: string | null; onClose: () => void; personalAllowed: boolean; blockedByClass: boolean }) {
   const docs = useData((s) => s.docs);
-  const platforms = allPlatforms(docs.platforms);
+  const isApp = !!platformId && isAppRule(platformId);
+  // An app rule is for exactly one app: the platform list is that app, never the websites.
+  const platforms = isApp ? [{ id: platformId, name: appDisplayName(appSlugOf(platformId)) }] : allPlatforms(docs.platforms);
   const existing = docs.limits.find((l) => l.platform === platformId) ?? null;
   const [f, setF] = useState(() => existing
     ? { platform: existing.platform, hasBudget: existing.dailyMinutes !== null, minutes: existing.dailyMinutes ?? 30, days: existing.days, hasHours: existing.allowedStart !== null, start: hhmm(existing.allowedStart ?? 900), end: hhmm(existing.allowedEnd ?? 1200), warn: existing.warnAtPct, enabled: existing.enabled }
@@ -48,13 +51,13 @@ function PersonalLimitForm({ platformId, onClose, personalAllowed, blockedByClas
   };
 
   return (
-    <Dialog open onClose={onClose} title={existing ? 'Edit your rule' : 'Set a limit'} description="Your own rule can only make things stricter than a class rule, never looser." footer={<>
+    <Dialog open onClose={onClose} title={existing ? 'Edit your rule' : isApp ? `Limit ${platforms[0]!.name}` : 'Set a limit'} description="Your own rule can only make things stricter than a class rule, never looser." footer={<>
       {existing && <Button variant="danger" onClick={() => void attempt(() => useData.getState().remove('limits', existing.id)).then((r) => { if (r.ok) { toast.ok('Rule removed.'); onClose(); } })}>Remove</Button>}
       <Button variant="quiet" onClick={onClose}>Cancel</Button><Button variant="primary" onClick={() => void save()} disabled={!personalAllowed}>Save rule</Button></>}>
       {!personalAllowed && <Banner title="Personal limits are switched off by your class.">You can see the rule below but it will not take effect until your class allows it.</Banner>}
-      {blockedByClass && <Banner tone="info" title="This platform is blocked by your class.">A personal rule can’t loosen that, so it would have no effect.</Banner>}
+      {blockedByClass && <Banner tone="info" title={isApp ? 'This app is blocked by your class.' : 'This platform is blocked by your class.'}>A personal rule can’t loosen that, so it would have no effect.</Banner>}
       <div className="stack">
-        <Field label="Platform"><Select value={f.platform} disabled={!!existing} onChange={(e) => setF({ ...f, platform: e.target.value })}>{platforms.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</Select></Field>
+        <Field label={isApp ? 'App' : 'Platform'}><Select value={f.platform} disabled={!!existing || isApp} onChange={(e) => setF({ ...f, platform: e.target.value })}>{platforms.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</Select></Field>
         <Switch label="Daily time budget" checked={f.hasBudget} onChange={(v) => setF({ ...f, hasBudget: v })} />
         {f.hasBudget && <Field label="Minutes per day" error={err.minutes}><Input type="number" min={0} max={1440} step={5} value={f.minutes} onChange={(e) => setF({ ...f, minutes: Number(e.target.value) })} /></Field>}
         <fieldset style={{ border: 0, padding: 0, margin: 0 }}>

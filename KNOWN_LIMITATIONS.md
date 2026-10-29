@@ -4,12 +4,27 @@ Ordered by how much they matter to a student or teacher. Each item says what is 
 mitigates it. Nothing here is hidden in the UI: the Settings screen and the relevant screens state the same facts.
 
 ## Enforcement (Digital Life Control)
-1. **Only websites in a browser with the FOCUS OS extension can be measured or blocked.** Apps outside the browser
-   (desktop apps, phone apps) are never measured or blocked; the UI labels them *Unavailable* and lets students add
-   time themselves, always shown as **self-reported**. Research notes for later: Windows can report the foreground
-   process (`GetForegroundWindow`) without elevation but *blocking* an app means terminating processes, which is
-   intrusive and was deliberately not built; macOS needs Accessibility/Screen Recording-class permissions for anything
-   beyond the frontmost app name. Neither is implemented; neither is claimed.
+1. **Websites are measured and blocked only in a Chromium browser with the FOCUS OS extension. Desktop apps are
+   limited by the desktop app itself, and only on the computer it runs on.** Phone/tablet apps are never covered; time
+   there can only be added by the student and is labelled **self-reported**.
+   * **Apps (desktop):** time means how long an app's *process is open*, not how long its window is in front. A game
+     left open in the background keeps counting. Apps are matched by **exact process name** (plus a short built-in list
+     of aliases for well-known games and launchers); anything whose process name differs from the name entered is not
+     found, and Java-edition Minecraft runs as `java`/`javaw`, which is deliberately not matched. The list of installed
+     apps is best-effort (macOS `/Applications`, Linux `.desktop` files, Windows Start Menu shortcuts, whose names do not
+     always equal the process name); running programs are always exact.
+   * **Closing is warn-then-close.** The student gets a warning (60 s the first time, 10 s if already warned or if the
+     app is reopened within five minutes), then the app is asked to quit (SIGTERM on macOS/Linux) and, if still open
+     20 s later, ended. **On Windows there is no polite request in this version: the process is ended**, so unsaved
+     work in that app is lost after the warning. Games can ignore or restart themselves; a launcher that relaunches its
+     game will be closed again each time.
+   * **Never touched:** the operating system's own processes, shells and terminals, web browsers (they are limited per
+     website through the extension) and FOCUS OS itself. A rule naming one is ignored and reported on the Apps screen.
+   * Class app rules are as strong as the student's cooperation: they can switch enforcement to *Remind only* or
+     *Off* (the screen then says "Not enforced"), quit FOCUS OS, or rename a program. Nothing reports compliance back to
+     the teacher, by design.
+   * **Windows and macOS: process listing, polite close, notifications and the installed-app scan are untested**
+     (verified only on Linux with real processes). Treat the first run there as the first verification.
 2. **Chromium browsers only** (Chrome, Edge, Brave — Manifest V3). Firefox and Safari are not supported. The
    extension must be loaded unpacked (`extension/dist`); it is not published to a store.
 3. **Enforcement is only as strong as the student's cooperation.** The extension can be disabled or removed; the

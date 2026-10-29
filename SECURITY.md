@@ -83,6 +83,20 @@ network) can remove the extension, edit the local database, change the clock or 
   platforms and `127.0.0.1:47777`; others are optional).
 * Verified by `tests/bridge.rs` and the real-Chromium extension e2e (wrong token is rejected and reported).
 
+### Closing apps (Apps section)
+* **A class cannot run anything on a student's computer.** A policy can only *name* an app (`app.<slug>`, validated
+  against `[a-z0-9.-]{1,64}` by the host and by every client); the student's own app decides whether anything matches,
+  and the only action it can take is asking a matching process to quit. There is no command, path or argument in the
+  protocol.
+* **Consent and visibility:** rules come from a class the student chose to join; every rule shows its origin, every
+  action is preceded by a notification, the student can set *Remind only* or *Off* at any time (and the screen then
+  says "Not enforced"), and nothing about app use is sent to the class.
+* **Blast radius is bounded:** operating-system processes, shells/terminals, browsers and FOCUS OS itself can never be
+  limited or closed (exact-name list plus system path prefixes), enforced both when listing and when acting; matching
+  is by exact process name, never by substring.
+* Verified by `focus_core::apps` unit tests, `tests/apps.rs` (a real process is warned about, really ended, and not
+  ended in remind mode; protected names are ignored) and the native e2e (a real program is closed through the UI).
+
 ### Dependencies
 * `npm audit`: 0 vulnerabilities (runtime and dev). `cargo audit` (RustSec database as of the run): **0
   vulnerabilities**, 5 informational warnings, all transitive and Linux-only (`proc-macro-error`, `zbus_names`,
