@@ -25,7 +25,7 @@ pub fn deliver<R: Runtime>(app: &AppHandle<R>, n: Notice) {
 #[tauri::command]
 pub async fn apps_list(st: State<'_, AppState>) -> CmdResult<Vec<AppEntry>> {
     let m = st.apps.clone();
-    Ok(tauri::async_runtime::spawn_blocking(move || m.list()).await.map_err(|e| crate::error::CmdError::new("internal", e.to_string()))?)
+    tauri::async_runtime::spawn_blocking(move || m.list()).await.map_err(|e| crate::error::CmdError::new("internal", e.to_string()))
 }
 
 #[tauri::command]

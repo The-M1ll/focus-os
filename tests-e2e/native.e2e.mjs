@@ -203,6 +203,6 @@ try {
   driver.kill();
   const ok = results.filter(Boolean).length;
   console.log(`\n${ok}/${results.length} checks passed`);
-  fs.rmSync(home, { recursive: true, force: true });
+  try { fs.rmSync(home, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 }); } catch { /* the app may still be flushing on exit; the temp dir is disposable */ }
   process.exit(ok === results.length ? 0 : 1);
 }

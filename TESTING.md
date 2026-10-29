@@ -28,14 +28,14 @@ to exist, hence `npm run build` first. Playwright uses `CHROMIUM_PATH` (default 
 | Suite | Result | What it proves |
 |---|---|---|
 | `tsc --noEmit`, `eslint .`, `cargo clippy --workspace --all-targets` | clean | strict types, hooks/compiler rules, no Rust lints |
-| `vitest` | **172 / 172** in 14 files | see below |
-| `cargo test --workspace -- --include-ignored` | **54 / 54** (52 default + 2 multicast) | core, bridge, IPC, discovery |
-| `playwright test` | **28 / 28** | workflows, no horizontal overflow at 1280/900/760 px on 7 screens, **axe-core: 0 violations on all 7 screens × dark/light**, focus trap + focus return, sticky-header scroll-padding, reduced motion, axe harness self-check |
+| `vitest` | **194 / 194** in 16 files | see below (+14 apps domain, +8 Apps UI) |
+| `cargo test --workspace -- --include-ignored` | **71 / 71** (69 default + 2 multicast) | core, apps monitor (12 unit + 4 real-process), bridge, IPC (8), discovery |
+| `playwright test` | **33 / 33** | workflows, no horizontal overflow at 1280/900/760 px on 8 screens, **axe-core: 0 violations on all 8 screens × dark/light**, ambient effects (decorative, click-through, switch, reduced motion), focus trap + focus return, sticky-header scroll-padding, reduced motion, axe harness self-check |
 | `extension.e2e.mjs` | **12 / 12** | real Chromium + extension + real bridge: auth, measured time, no time for background tabs, block/unblock, honest failure |
-| `native.e2e.mjs` | **30 / 30** | real desktop app (WebKitGTK) through its UI + an independent Node device speaking the documented protocol |
+| `native.e2e.mjs` | **37 / 37** | real desktop app (WebKitGTK) through its UI + an independent Node device speaking the documented protocol + **a real program is listed, warned about and closed through the Apps screen** |
 | `npm audit` / `cargo audit` | 0 vulnerabilities / 0 vulnerabilities (+5 informational, see SECURITY.md) | |
 
-### Unit and component tests (vitest, 172)
+### Unit and component tests (vitest, 194)
 * **time (11)**: zones, reset hour, DST (incl. 25-hour day), day arithmetic, week starts, validation.
 * **timer (18)**: pause/resume, completion trimming, **sleep gap not counted**, throttling tolerance, backwards clock,
   restart recovery, JSON round-trip, finalisation, **midnight and DST splitting**.
@@ -46,6 +46,7 @@ to exist, hence `npm run build` first. Playwright uses `CHROMIUM_PATH` (default 
   corrupt documents (kept in storage), atomic batches, export/import validation, restore takes a safety copy, timer
   persistence and recovery, accidental starts not logged.
 * **autosave (5), Markdown (4)**: debounce, in-flight edits not lost, flush on unmount, failure + retry; no raw HTML/`javascript:`.
+* **Apps (14 domain + 8 UI)**: slug parity with Rust, availability windows in the student's zone, class block / strictest budget / hours precedence reflected in the policy pushed to the monitor, switched-off rules send nothing, extension never receives app rules; UI: preview honesty, desktop list (games first, filter), class rule appears automatically and is pushed as blocked, personal rule cannot loosen it, Off mode is honest everywhere, warnings shown, class editor publishes `app.<slug>`.
 * **App flows (24, jsdom, whole app against an in-memory backend)**: first-run, timer start/pause/end without completing
   the task, interruption recovery, keyboard + palette, task validation and undo, overrun advice, catch-up proposals
   (not applied until confirmed), exam plan (not added until confirmed), note autosave surviving reload, subject delete
@@ -77,6 +78,11 @@ to exist, hence `npm run build` first. Playwright uses `CHROMIUM_PATH` (default 
   context/ACL), two app instances: store round-trip/backup/restore/validation/restart, bridge status,
   weak class input refused (and no orphan class), invalid join codes, **full classroom lifecycle through the command
   layer**, and **remote web content cannot call any command**.
+
+## Known flake
+`extension.e2e.mjs` measures real seconds of foreground time; on one run immediately after the full Playwright suite it
+reported 10/12 and then passed 12/12 on three consecutive reruns. The cause was not isolated (timing under CPU load is the
+likely one); if it fails, rerun it alone before investigating.
 
 ## Real vs simulated — be precise
 * **Real:** sockets (TCP, WebSocket, mDNS multicast), SQLite on disk, Ed25519/HMAC/Argon2id, Chromium with the

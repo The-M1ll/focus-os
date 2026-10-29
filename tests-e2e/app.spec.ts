@@ -135,7 +135,7 @@ test.describe('workflows', () => {
     await expect(page.getByText('Desktop app only')).toBeVisible();
     await expect(page.getByText(/configured, but not enforced/i).first()).toBeVisible();
     await expect(page.getByText(/self-reported/i).first()).toBeVisible();
-    await expect(page.getByText(/never measured automatically/i)).toBeVisible();
+    await expect(page.getByText(/phone apps are not covered/i)).toBeVisible();
   });
 });
 
@@ -238,12 +238,13 @@ test.describe('accessibility (axe-core, real rendering incl. colour contrast)', 
 
     test('can be switched off in Settings and stay off', async ({ page }) => {
       await seed(page);
-      await page.keyboard.press('Control+k');
-      await page.getByLabel(/search commands, notes and cards/i).fill('settings');
-      await page.keyboard.press('Enter');
-      await page.getByRole('switch', { name: /ambient effects/i }).uncheck();
+      await page.getByRole('button', { name: 'Settings' }).click();
+      await page.locator('label.switch', { hasText: 'Ambient effects' }).click();
+      await expect(page.getByRole('switch', { name: /ambient effects/i })).not.toBeChecked();
       await expect(page.locator('.ambient')).toHaveCount(0);
       await page.reload();
+      await page.getByRole('heading', { level: 1, name: /settings/i }).waitFor();
+      await page.keyboard.press('1');
       await page.getByRole('timer').waitFor();
       await expect(page.locator('.ambient')).toHaveCount(0);
       await expect(page.locator('.gyro')).toHaveCount(0);
