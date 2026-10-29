@@ -29,7 +29,9 @@ fn instance(dir: &Path) -> Instance {
 }
 
 fn call(i: &Instance, cmd: &str, args: Value) -> Result<Value, Value> {
-    call_from(i, "tauri://localhost", cmd, args)
+    // The webview's own origin: `tauri://localhost` on macOS/Linux, `http://tauri.localhost` on Windows.
+    let origin = if cfg!(windows) { "http://tauri.localhost" } else { "tauri://localhost" };
+    call_from(i, origin, cmd, args)
 }
 
 fn call_from(i: &Instance, origin: &str, cmd: &str, args: Value) -> Result<Value, Value> {
