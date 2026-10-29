@@ -18,6 +18,10 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run build:extension
+      - uses: actions/upload-artifact@v4
+        with:
+          name: focus-os-chrome-extension
+          path: extension/dist
       - run: npm audit --audit-level=high
 
   rust-linux:
