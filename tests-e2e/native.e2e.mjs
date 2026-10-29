@@ -135,7 +135,7 @@ try {
   // ---- 6. publish through the admin UI; verify the signature in Node ---------------
   await waitFor(async () => has('Aziza (node device)'), 'member appears in the admin UI');
   check('joined device appears in the admin member list', true);
-  const addBtn = await btn('Add platform rule');
+  const addBtn = await btn('Add website rule');
   await click(addBtn);
   const pubBtn = await btn('Publish revision 1');
   await click(pubBtn);
