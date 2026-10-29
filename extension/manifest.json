@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FOCUS OS",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Measures time on limited websites and enforces your FOCUS OS limits. Talks only to the FOCUS OS desktop app on this computer.",
   "minimum_chrome_version": "110",
   "permissions": [

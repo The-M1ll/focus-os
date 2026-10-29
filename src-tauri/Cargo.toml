@@ -1,6 +1,6 @@
 [package]
 name = "focus-os"
-version = "0.1.0"
+version = "0.1.1"
 description = "FOCUS OS - local-first study environment"
 edition = "2024"
 rust-version = "1.85"

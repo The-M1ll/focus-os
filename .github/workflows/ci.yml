@@ -67,15 +67,17 @@ jobs:
       - if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev libxdo-dev
       - run: npm ci
-      - run: cargo test --workspace
-      # When Windows tests fail, say which ones as annotations (readable without log access).
-      - if: failure() && matrix.os == 'windows-latest'
+      - if: matrix.os != 'windows-latest'
+        run: cargo test --workspace
+      # Windows: capture the FIRST run's output and, on failure, post the failing tests as annotations.
+      - if: matrix.os == 'windows-latest'
         shell: bash
-        continue-on-error: true
         run: |
-          cargo test --workspace --no-fail-fast 2>&1 | tee test-out.txt || true
+          set -o pipefail
+          cargo test --workspace --no-fail-fast 2>&1 | tee test-out.txt && exit 0
           grep -E "^test .* FAILED|panicked at|^error:|STATUS_|^---- " test-out.txt | head -30 | while IFS= read -r l; do echo "::error::${l:0:400}"; done
-          grep -A4 -E "panicked at" test-out.txt | head -60 | tr '\n' ' ' | head -c 2500 | while IFS= read -r l; do echo "::warning::$l"; done
+          grep -B1 -A4 -E "panicked at" test-out.txt | head -80 | tr '\n' ' ' | head -c 2800 | while IFS= read -r l; do echo "::warning::$l"; done
+          exit 1
       - run: npm run tauri build
       - uses: actions/upload-artifact@v4
         with:
