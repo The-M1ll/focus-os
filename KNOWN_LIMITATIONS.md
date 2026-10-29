@@ -8,7 +8,7 @@ mitigates it. Nothing here is hidden in the UI: the Settings screen and the rele
    limited by the desktop app itself, and only on the computer it runs on.** Phone/tablet apps are never covered; time
    there can only be added by the student and is labelled **self-reported**.
    * **Apps (desktop):** time means how long an app's *process is open*, not how long its window is in front. A game
-     left open in the background keeps counting. Apps are matched by **exact process name** (plus a short built-in list
+     left open in the background keeps counting. Apps are matched by **exact process or executable name** (plus a short built-in list
      of aliases for well-known games and launchers); anything whose process name differs from the name entered is not
      found, and Java-edition Minecraft runs as `java`/`javaw`, which is deliberately not matched. The list of installed
      apps is best-effort (macOS `/Applications`, Linux `.desktop` files, Windows Start Menu shortcuts, whose names do not

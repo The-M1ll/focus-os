@@ -210,8 +210,30 @@ impl ProcessSource for SysProcesses {
     }
 }
 
+/// File name of the executable, when the OS tells us. Linux truncates a process *name* to 15 characters, so the
+/// executable's own file name is the more reliable identity.
+fn exe_slug(p: &ProcInfo) -> Option<String> {
+    let exe = p.exe.as_deref()?;
+    let file = exe.rsplit(['/', '\\']).next()?;
+    let s = slug(file);
+    (!s.is_empty()).then_some(s)
+}
+
+/// The identity shown in the list: the executable's file name if known, else the process name.
 fn proc_slug(p: &ProcInfo) -> String {
-    slug(&p.name)
+    exe_slug(p).unwrap_or_else(|| slug(&p.name))
+}
+
+/// Every identity a rule may match against (process name and executable file name).
+fn proc_identities(p: &ProcInfo) -> Vec<String> {
+    let mut v = vec![slug(&p.name)];
+    if let Some(e) = exe_slug(p) {
+        if !v.contains(&e) {
+            v.push(e);
+        }
+    }
+    v.retain(|s| !s.is_empty());
+    v
 }
 
 // ---- app list for the UI ---------------------------------------------------------------------
@@ -636,18 +658,27 @@ impl Enforcer {
 pub fn running_by_rule(procs: &[ProcInfo], rule_slugs: &[String]) -> HashMap<String, Vec<u32>> {
     let mut by_proc: HashMap<String, Vec<u32>> = HashMap::new();
     for p in procs {
-        let ps = proc_slug(p);
-        if is_protected(&ps, p.exe.as_deref()) {
+        let ids = proc_identities(p);
+        if ids.iter().any(|i| is_protected(i, p.exe.as_deref())) {
             continue;
         }
-        by_proc.entry(ps).or_default().push(p.pid);
+        for i in ids {
+            let v = by_proc.entry(i).or_default();
+            if !v.contains(&p.pid) {
+                v.push(p.pid);
+            }
+        }
     }
-    let mut out = HashMap::new();
+    let mut out: HashMap<String, Vec<u32>> = HashMap::new();
     for s in rule_slugs {
         let mut pids = Vec::new();
         for ps in process_slugs(s) {
             if let Some(v) = by_proc.get(&ps) {
-                pids.extend(v);
+                for pid in v {
+                    if !pids.contains(pid) {
+                        pids.push(*pid);
+                    }
+                }
             }
         }
         if !pids.is_empty() {
@@ -831,6 +862,16 @@ mod tests {
         // Exact matching only: "stea" must not match "steam".
         let m2 = running_by_rule(&procs, &["stea".into()]);
         assert!(m2.is_empty());
+    }
+
+    #[test]
+    fn long_names_truncated_by_the_os_still_match_through_the_executable_name() {
+        let procs = vec![ProcInfo { pid: 9, name: "focus-victim-12".into(), exe: Some("/tmp/x/focus-victim-12345".into()) }];
+        let m = running_by_rule(&procs, &["focus-victim-12345".into()]);
+        assert_eq!(m.get("focus-victim-12345"), Some(&vec![9]));
+        // and a protected executable is protected even if its name looks harmless
+        let sneaky = vec![ProcInfo { pid: 1, name: "innocent".into(), exe: Some("/usr/bin/bash".into()) }];
+        assert!(running_by_rule(&sneaky, &["innocent".into(), "bash".into()]).is_empty());
     }
 
     #[test]

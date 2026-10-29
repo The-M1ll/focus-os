@@ -6,13 +6,32 @@ use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
-#[cfg(unix)]
-fn spawn_victim() -> (Child, &'static str) {
-    (Command::new("sleep").arg("300").stdout(Stdio::null()).spawn().expect("sleep"), "sleep")
+/// A harmless program with a name of its own: a copy of this very test executable that just sleeps.
+/// (Not `sleep`/`ping`: those live in system folders, which FOCUS OS refuses to touch, and ending a shared
+/// name would end every copy running on the machine.) Returns the child and its app slug.
+fn spawn_victim() -> (Child, String, std::path::PathBuf) {
+    let dir = std::env::temp_dir().join(format!("focus-victim-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let ext = if cfg!(windows) { ".exe" } else { "" };
+    let name = format!("focus-victim-{}{ext}", std::process::id());
+    let copy = dir.join(&name);
+    std::fs::copy(std::env::current_exe().unwrap(), &copy).unwrap();
+    let child = Command::new(&copy)
+        .args(["--ignored", "--exact", "victim_sleeper", "--nocapture"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("start the victim");
+    std::thread::sleep(Duration::from_millis(300)); // let the new process finish starting
+    let slug = focus_core::apps::slug(&name);
+    (child, slug, dir)
 }
-#[cfg(windows)]
-fn spawn_victim() -> (Child, &'static str) {
-    (Command::new("ping").args(["-n", "300", "127.0.0.1"]).stdout(Stdio::null()).spawn().expect("ping"), "ping")
+
+/// Only ever run as the "victim" process above.
+#[test]
+#[ignore]
+fn victim_sleeper() {
+    std::thread::sleep(Duration::from_secs(300));
 }
 
 /// Every test uses the same program name, and ending "sleep" ends all of them, so the tests run one at a time.
@@ -48,7 +67,8 @@ fn wait_exit(c: &mut Child, secs: u64) -> bool {
 #[test]
 fn a_blocked_program_is_warned_then_really_closed_and_its_open_time_is_recorded() {
     let _g = serial();
-    let (mut child, slug) = spawn_victim();
+    let (mut child, slug, dir) = spawn_victim();
+    let slug = slug.as_str();
     let (m, store) = monitor();
     m.push(policy(slug, true, Mode::Close)).unwrap();
     let seen = Mutex::new(Vec::<Notice>::new());
@@ -68,12 +88,14 @@ fn a_blocked_program_is_warned_then_really_closed_and_its_open_time_is_recorded(
     let used = store.app_usage("2026-01-05").unwrap();
     assert!(used.iter().any(|(a, s)| a == slug && *s >= 30), "{used:?}");
     assert_eq!(m.status().usage.len(), 1);
+    let _ = std::fs::remove_dir_all(&dir);
 }
 
 #[test]
 fn remind_only_never_ends_the_program() {
     let _g = serial();
-    let (mut child, slug) = spawn_victim();
+    let (mut child, slug, dir) = spawn_victim();
+    let slug = slug.as_str();
     let (m, _) = monitor();
     m.push(policy(slug, true, Mode::Remind)).unwrap();
     let seen = Mutex::new(Vec::<Notice>::new());
@@ -85,12 +107,14 @@ fn remind_only_never_ends_the_program() {
     assert!(!seen.lock().unwrap().iter().any(|n| matches!(n, Notice::Closed { .. })));
     assert!(child.try_wait().unwrap().is_none());
     child.kill().unwrap();
+    let _ = std::fs::remove_dir_all(&dir);
 }
 
 #[test]
 fn the_app_list_shows_running_programs_and_hides_protected_ones() {
     let _g = serial();
-    let (mut child, slug) = spawn_victim();
+    let (mut child, slug, dir) = spawn_victim();
+    let slug = slug.as_str();
     let (m, _) = monitor();
     let apps = m.list();
     assert!(apps.iter().any(|a| a.slug == slug && a.running), "{:?}", apps.iter().map(|a| &a.slug).collect::<Vec<_>>());
@@ -98,6 +122,7 @@ fn the_app_list_shows_running_programs_and_hides_protected_ones() {
         assert!(!apps.iter().any(|a| a.slug == hidden), "{hidden} must never be offered");
     }
     child.kill().unwrap();
+    let _ = std::fs::remove_dir_all(&dir);
 }
 
 #[test]
