@@ -227,10 +227,10 @@ fn proc_slug(p: &ProcInfo) -> String {
 /// Every identity a rule may match against (process name and executable file name).
 fn proc_identities(p: &ProcInfo) -> Vec<String> {
     let mut v = vec![slug(&p.name)];
-    if let Some(e) = exe_slug(p) {
-        if !v.contains(&e) {
-            v.push(e);
-        }
+    if let Some(e) = exe_slug(p)
+        && !v.contains(&e)
+    {
+        v.push(e);
     }
     v.retain(|s| !s.is_empty());
     v
