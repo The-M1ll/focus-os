@@ -35,8 +35,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ inputs.version || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v0.1.0' }}
-          releaseName: 'FOCUS OS ${{ inputs.version || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v0.1.0' }}'
+          tagName: "${{ inputs.version || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v0.1.0' }}"
+          releaseName: "FOCUS OS ${{ inputs.version || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v0.1.0' }}"
           releaseBody: |
             Unsigned preview build. Windows SmartScreen / macOS Gatekeeper will warn on first launch.
             macOS: right-click the app, choose Open (or run `xattr -cr "/Applications/FOCUS OS.app"`).
